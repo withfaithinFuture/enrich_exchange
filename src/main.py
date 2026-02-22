@@ -1,9 +1,10 @@
 import asyncio
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import UJSONResponse
+from fastapi.responses import UJSONResponse, JSONResponse
 from exchange.enrich_exchange_routers import router as exchange_routers
+from src.exchange.exceptions import UnavailableServiceError
 
 
 def get_app() -> FastAPI:
@@ -27,13 +28,23 @@ def get_app() -> FastAPI:
 
     app.include_router(exchange_routers)
 
+    @app.exception_handler(UnavailableServiceError)
+    async def unavailable_service_handler(request: Request, exception: UnavailableServiceError):
+        return JSONResponse(
+            status_code=503,
+            content={
+                "error": exception.error,
+                "message": exception.message
+            }
+        )
+
     return app
 
 
 
 async def main() -> None:
     uvicorn.run(
-        "src.app.application.application:get_app",
+        "main:get_app",
         host="0.0.0.0",
         port=8001,
         reload=True,

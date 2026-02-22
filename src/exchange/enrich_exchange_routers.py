@@ -11,20 +11,17 @@ router = APIRouter(tags=['Actions with exchanges'])
 
 @router.post("/{exchange_name}")
 async def create_exchange(exchange_name: str, use_case: CreateExchangeUseCase = Depends(create_use_case)):
-    exchange = await use_case.execute(exchange_name)
-    return exchange
+    return await use_case.execute(exchange_name)
 
 
 @router.get("/{exchange_name}")
 async def get_exchange(exchange_name: str, use_case: GetExchangeUseCase = Depends(get_use_case)):
-    exchange = await use_case.execute(exchange_name)
-    return exchange
+    return await use_case.execute(exchange_name)
 
 
 @router.put("/")
 async def update_exchange(exchange_name: str, use_case: UpdateExchangeUseCase = Depends(update_use_case)):
-    exchange = await use_case.execute(exchange_name)
-    return exchange
+    return await use_case.execute(exchange_name)
 
 
 @router.delete("/{exchange_id}")

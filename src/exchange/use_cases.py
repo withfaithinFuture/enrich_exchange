@@ -1,8 +1,11 @@
 import uuid
-from binance.binance_price_service import BinancePriceService
-from exchange.exchange_entities import Exchange
-from exchange.portfolio_interface import IExchangeRepo
-from first_service.exchange_api_service import ExchangeApiService
+from src.binance.binance_price_service import BinancePriceService
+from src.exchange.exceptions import UnavailableServiceError
+from src.exchange.exchange_entities import Exchange
+from src.exchange.portfolio_interface import IExchangeRepo
+from src.first_service.exchange_api_service import ExchangeApiService
+from aiobreaker import CircuitBreakerError
+from httpx import RequestError
 
 
 class CreateExchangeUseCase:
@@ -14,7 +17,12 @@ class CreateExchangeUseCase:
 
 
     async def execute(self, exchange_name: str) -> Exchange | None:
-        external_exchanges = await self.exchange_api.get_exchanges()
+
+        try:
+            external_exchanges = await self.exchange_api.get_exchanges()
+        except (CircuitBreakerError, RequestError) as e:
+            raise UnavailableServiceError("First service")
+
         external_exchange = None
         for exchange in external_exchanges:
             if exchange["exchange_name"] == exchange_name:
@@ -24,7 +32,13 @@ class CreateExchangeUseCase:
         if not external_exchange:
             return None
 
-        prices = await self.binance_service.get_prices()
+
+        try:
+            prices = await self.binance_service.get_prices()
+
+        except (CircuitBreakerError, RequestError) as e:
+            raise UnavailableServiceError("Binance")
+
 
         local_exchange = Exchange(
             id=uuid.uuid4(),
@@ -54,7 +68,11 @@ class GetExchangeUseCase:
 
     async def execute(self, exchange_name: str) -> Exchange | None:
 
-        external_exchanges = await self.exchange_api.get_exchanges()
+        try:
+            external_exchanges = await self.exchange_api.get_exchanges()
+        except (CircuitBreakerError, RequestError) as e:
+            raise UnavailableServiceError("First service")
+
         external_exchange = None
         for exchange in external_exchanges:
             if exchange["exchange_name"] == exchange_name:
@@ -79,7 +97,13 @@ class GetExchangeUseCase:
 
             await self.repo.create(local_exchange)
 
-        prices = await self.binance_service.get_prices()
+
+        try:
+            prices = await self.binance_service.get_prices()
+
+        except (CircuitBreakerError, RequestError) as e:
+            raise UnavailableServiceError("Binance")
+
 
         local_exchange.work_in_russia = external_exchange["work_in_Russia"]
         local_exchange.volume = external_exchange["volume"]
