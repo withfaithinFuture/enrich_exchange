@@ -1,7 +1,7 @@
 import httpx
 from aiobreaker import CircuitBreaker
 from datetime import timedelta
-
+from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_exponential_jitter
 
 binance_breaker = CircuitBreaker(fail_max=3, timeout_duration=timedelta(seconds=15))
 
@@ -12,6 +12,12 @@ class BinancePriceService:
     SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT"]
 
     @binance_breaker
+    @retry(
+        stop=stop_after_attempt(2),
+        wait=wait_exponential_jitter(1, max=5),
+        retry=retry_if_exception_type(httpx.RequestError),
+        reraise=True
+    )
     async def get_prices(self) -> dict:
         prices = {}
 
