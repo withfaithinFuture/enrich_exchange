@@ -1,13 +1,13 @@
 from fastapi import Depends
-from src.app.services.binance_price_service import BinancePriceService
-from src.app.services.exchange_api_service import ExchangeApiService
-from src.app.use_cases.create_exchange import CreateExchangeUseCase
-from src.app.use_cases.delete_exchange import DeleteExchangeUseCase
-from src.app.use_cases.get_exchange import GetExchangeUseCase
-from src.app.use_cases.update_exchange import UpdateExchangeUseCase
-from src.domain.interfaces.portfolio_interface import IExchangeRepo
-from src.infrastructure.db.db import get_session
-from src.infrastructure.db.repository import ExchangeRepository
+from binance.binance_price_service import BinancePriceService
+from first_service.exchange_api_service import ExchangeApiService
+from src.exchange.use_cases  import CreateExchangeUseCase
+from src.exchange.use_cases  import DeleteExchangeUseCase
+from src.exchange.use_cases import GetExchangeUseCase
+from src.exchange.use_cases import UpdateExchangeUseCase
+from exchange.portfolio_interface import IExchangeRepo
+from db import get_session
+from exchange.repository import ExchangeRepository
 
 
 async def get_use_case(session=Depends(get_session)):

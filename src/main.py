@@ -1,10 +1,9 @@
+import asyncio
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import UJSONResponse
-from src.routers.get_exchange_router import router as get_router
-from src.routers.create_exchange_router import router as create_router
-from src.routers.update_exchange_router import router as update_router
-from src.routers.delete_exchange_router import router as delete_router
+from exchange.enrich_exchange_routers import router as exchange_routers
 
 
 def get_app() -> FastAPI:
@@ -26,9 +25,21 @@ def get_app() -> FastAPI:
         allow_headers=["*"],
     )
 
-    app.include_router(get_router)
-    app.include_router(create_router)
-    app.include_router(update_router)
-    app.include_router(delete_router)
+    app.include_router(exchange_routers)
 
     return app
+
+
+
+async def main() -> None:
+    uvicorn.run(
+        "src.app.application.application:get_app",
+        host="0.0.0.0",
+        port=8001,
+        reload=True,
+        factory=True,
+    )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
