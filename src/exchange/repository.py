@@ -1,10 +1,9 @@
 from abc import ABC
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from exchange.exchange_entities import Exchange
-from exchange.portfolio_interface import IExchangeRepo
-from exchange.schemas import ExchangeModel
+from src.exchange.exchange_entities import Exchange
+from src.exchange.interface import IExchangeRepo
+from src.exchange.models import ExchangeModel
 
 
 

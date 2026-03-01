@@ -1,6 +1,5 @@
 from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings
-
 from pathlib import Path
 
 

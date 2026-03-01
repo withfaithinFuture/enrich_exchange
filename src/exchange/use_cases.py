@@ -1,11 +1,16 @@
 import uuid
+from dataclasses import asdict
 from random import randint
+import ujson
+from fastapi.params import Depends
+from redis import Redis
+from src.exchange.redis_client import get_redis
 from src.binance.binance_price_service import BinancePriceService
 from src.exchange.exceptions import UnavailableServiceError
 from src.exchange.exchange_entities import Exchange
-from src.exchange.portfolio_interface import IExchangeRepo
+from src.exchange.interface import IExchangeRepo
 from aiobreaker import CircuitBreakerError
-from httpx import RequestError, HTTPError
+from httpx import HTTPError
 
 
 class CreateExchangeMetricsUseCase:
@@ -40,15 +45,29 @@ class CreateExchangeMetricsUseCase:
 
 class GetExchangeUseCase:
 
-    def __init__(self, repo: IExchangeRepo, create_use_case: CreateExchangeMetricsUseCase):
+    def __init__(self, repo: IExchangeRepo, create_use_case: CreateExchangeMetricsUseCase, redis: Redis = Depends(get_redis)):
         self.repo = repo
         self.create_use_case = create_use_case
+        self.redis = redis
 
 
     async def execute(self, exchange_name: str) -> Exchange:
+        exchange_key = f"exchange_{exchange_name}"
+        cached_data = await self.redis.get(exchange_key)
+        if cached_data:
+            data_dict = ujson.loads(cached_data)
+            return Exchange(**data_dict)
 
         exchange = await self.repo.get_by_name(exchange_name)
+
         if not exchange:
-            return await self.create_use_case.execute(exchange_name)
+            await self.create_use_case.execute(exchange_name)
+            exchange = await self.repo.get_by_name(exchange_name)
+
+        exchange_dict = asdict(exchange)
+        exchange_dict['id'] = str(exchange_dict['id'])
+        data = ujson.dumps(exchange_dict)
+
+        await self.redis.set(exchange_key, data, ex=3600)
 
         return exchange

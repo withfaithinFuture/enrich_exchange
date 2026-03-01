@@ -1,22 +1,22 @@
 from fastapi import Depends
-from binance.binance_price_service import BinancePriceService
+from src.binance.binance_price_service import BinancePriceService
+from src.exchange.redis_client import get_redis
 from src.exchange.use_cases  import CreateExchangeMetricsUseCase
 from src.exchange.use_cases import GetExchangeUseCase
-from db import get_session
-from exchange.repository import ExchangeRepository
+from src.db import get_session
+from src.exchange.repository import ExchangeRepository
 
 
-def get_binance_service() -> BinancePriceService:
-    return BinancePriceService()
+async def create_use_case(session=Depends(get_session)) -> CreateExchangeMetricsUseCase:
+    repo = ExchangeRepository(session)
+    binance_service = BinancePriceService()
 
-
-async def get_exchange_repo(session=Depends(get_session)) -> ExchangeRepository:
-    return ExchangeRepository(session)
-
-
-async def create_use_case(repo: ExchangeRepository = Depends(get_exchange_repo), binance_service: BinancePriceService = Depends(get_binance_service)) -> CreateExchangeMetricsUseCase:
     return CreateExchangeMetricsUseCase(repo, binance_service)
 
 
-async def get_use_case(repo: ExchangeRepository = Depends(get_exchange_repo), create_case: CreateExchangeMetricsUseCase = Depends(create_use_case)) -> GetExchangeUseCase:
-    return GetExchangeUseCase(repo, create_case)
+async def get_use_case(session=Depends(get_session), redis = Depends(get_redis)) -> GetExchangeUseCase:
+    repo = ExchangeRepository(session)
+    binance_service = BinancePriceService()
+    create_case = CreateExchangeMetricsUseCase(repo, binance_service)
+
+    return GetExchangeUseCase(repo, create_case, redis)

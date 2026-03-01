@@ -1,10 +1,19 @@
 import asyncio
+from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import UJSONResponse, JSONResponse
-from exchange.routers import router as exchange_routers
+from src.exchange.redis_client import redis_client
+from src.exchange.routers import router as exchange_routers
 from src.exchange.exceptions import UnavailableServiceError
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+
+    await redis_client.close()
 
 
 def get_app() -> FastAPI:
@@ -16,6 +25,7 @@ def get_app() -> FastAPI:
         docs_url="/docs",
         openapi_url="/openapi.json",
         default_response_class=UJSONResponse,
+        lifespan=lifespan
     )
 
     app.add_middleware(
@@ -44,7 +54,7 @@ def get_app() -> FastAPI:
 
 async def main() -> None:
     uvicorn.run(
-        "main:get_app",
+        "src.main:get_app",
         host="0.0.0.0",
         port=8001,
         reload=True,
