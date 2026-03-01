@@ -11,11 +11,9 @@ class ExchangeModel(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     exchange_name: Mapped[str] = mapped_column(sa.String())
-    work_in_russia: Mapped[bool] = mapped_column(sa.Boolean())
-    volume: Mapped[int] = mapped_column(sa.BigInteger())
-    owner_first_name: Mapped[str] = mapped_column(sa.String())
-    owner_last_name: Mapped[str] = mapped_column(sa.String())
+    trust_score: Mapped[int] = mapped_column(sa.INT)
 
-    btc_price: Mapped[None | float] = mapped_column(sa.Float)
-    eth_price: Mapped[None | float] = mapped_column(sa.Float)
-    sol_price: Mapped[None | float] = mapped_column(sa.Float)
+
+    btc_price: Mapped[float] = mapped_column(sa.Float)
+    eth_price: Mapped[float] = mapped_column(sa.Float)
+    sol_price: Mapped[float] = mapped_column(sa.Float)

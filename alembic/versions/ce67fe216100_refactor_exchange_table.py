@@ -1,8 +1,8 @@
-"""init exchange table
+"""refactor_exchange_table
 
-Revision ID: aef2e3784b14
+Revision ID: ce67fe216100
 Revises: 
-Create Date: 2026-02-19 21:04:34.114006
+Create Date: 2026-03-01 22:07:58.429437
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'aef2e3784b14'
+revision: str = 'ce67fe216100'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -24,13 +24,10 @@ def upgrade() -> None:
     op.create_table('exchange',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('exchange_name', sa.String(), nullable=False),
-    sa.Column('work_in_russia', sa.Boolean(), nullable=False),
-    sa.Column('volume', sa.BigInteger(), nullable=False),
-    sa.Column('owner_first_name', sa.String(), nullable=False),
-    sa.Column('owner_last_name', sa.String(), nullable=False),
-    sa.Column('btc_price', sa.Float(), nullable=True),
-    sa.Column('eth_price', sa.Float(), nullable=True),
-    sa.Column('sol_price', sa.Float(), nullable=True),
+    sa.Column('trust_score', sa.INTEGER(), nullable=False),
+    sa.Column('btc_price', sa.Float(), nullable=False),
+    sa.Column('eth_price', sa.Float(), nullable=False),
+    sa.Column('sol_price', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###

@@ -3,7 +3,7 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import UJSONResponse, JSONResponse
-from exchange.enrich_exchange_routers import router as exchange_routers
+from exchange.routers import router as exchange_routers
 from src.exchange.exceptions import UnavailableServiceError
 
 
