@@ -11,9 +11,9 @@ router = APIRouter(tags=['Actions with exchanges'])
 
 @router.post("/exchange/{exchange_name}", status_code=status.HTTP_201_CREATED)
 async def create_exchange(exchange_name: str, create_case: CreateExchangeMetricsUseCase = Depends(create_use_case)):
-    return await create_case.execute(exchange_name)
+    return await create_case.create_exchange_metrics(exchange_name)
 
 
 @router.get("/exchange/{exchange_name}", status_code=status.HTTP_200_OK)
 async def get_exchange(exchange_name: str, get_case: GetExchangeUseCase = Depends(get_use_case)):
-    return await get_case.execute(exchange_name)
+    return await get_case.get_exchange_by_name(exchange_name)

@@ -1,10 +1,11 @@
 from abc import ABC
+from dataclasses import asdict, fields
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from src.exchange.exceptions import NotFoundByNameError
 from src.exchange.exchange_entities import Exchange
 from src.exchange.interface import IExchangeRepo
 from src.exchange.models import ExchangeModel
-
 
 
 class ExchangeRepository(IExchangeRepo, ABC):
@@ -14,14 +15,7 @@ class ExchangeRepository(IExchangeRepo, ABC):
 
 
     async def create(self, exchange: Exchange) -> Exchange:
-        exchange_model = ExchangeModel(
-            id=exchange.id,
-            exchange_name=exchange.exchange_name,
-            trust_score=exchange.trust_score,
-            btc_price=exchange.btc_price,
-            eth_price=exchange.eth_price,
-            sol_price=exchange.sol_price
-        )
+        exchange_model = ExchangeModel(**asdict(exchange))
 
         self.session.add(exchange_model)
         await self.session.flush()
@@ -35,13 +29,11 @@ class ExchangeRepository(IExchangeRepo, ABC):
         exchange_model = result.scalar_one_or_none()
 
         if not exchange_model:
-            return None
+            raise NotFoundByNameError(exchange_name, 'Exchange')
 
-        return Exchange(
-            id=exchange_model.id,
-            exchange_name=exchange_model.exchange_name,
-            trust_score=exchange_model.trust_score,
-            btc_price=exchange_model.btc_price,
-            eth_price=exchange_model.eth_price,
-            sol_price=exchange_model.sol_price
-        )
+        exchange_args = {}
+
+        for field in fields(Exchange):
+            exchange_args[field.name] = getattr(exchange_model, field.name)
+
+        return Exchange(**exchange_args)

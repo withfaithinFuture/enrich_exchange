@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import UJSONResponse, JSONResponse
 from src.exchange.redis_client import redis_client
 from src.exchange.routers import router as exchange_routers
-from src.exchange.exceptions import UnavailableServiceError
+from src.exchange.exception_handler import register_handler
 
 
 @asynccontextmanager
@@ -37,16 +37,7 @@ def get_app() -> FastAPI:
     )
 
     app.include_router(exchange_routers)
-
-    @app.exception_handler(UnavailableServiceError)
-    async def unavailable_service_handler(request: Request, exception: UnavailableServiceError):
-        return JSONResponse(
-            status_code=503,
-            content={
-                "error": exception.error,
-                "message": exception.message
-            }
-        )
+    register_handler(app)
 
     return app
 

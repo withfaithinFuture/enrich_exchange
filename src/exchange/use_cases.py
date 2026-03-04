@@ -6,11 +6,8 @@ from fastapi.params import Depends
 from redis import Redis
 from src.exchange.redis_client import get_redis
 from src.binance.binance_price_service import BinancePriceService
-from src.exchange.exceptions import UnavailableServiceError
 from src.exchange.exchange_entities import Exchange
 from src.exchange.interface import IExchangeRepo
-from aiobreaker import CircuitBreakerError
-from httpx import HTTPError
 
 
 class CreateExchangeMetricsUseCase:
@@ -20,14 +17,9 @@ class CreateExchangeMetricsUseCase:
         self.binance_service = binance_service
 
 
-    async def execute(self, exchange_name: str) -> Exchange:
+    async def create_exchange_metrics(self, exchange_name: str) -> Exchange:
 
-        try:
-            prices = await self.binance_service.get_prices()
-
-        except (CircuitBreakerError, HTTPError) as e:
-            raise UnavailableServiceError("Binance")
-
+        prices = await self.binance_service.get_prices()
 
         new_exchange = Exchange(
             id=uuid.uuid4(),
@@ -51,7 +43,7 @@ class GetExchangeUseCase:
         self.redis = redis
 
 
-    async def execute(self, exchange_name: str) -> Exchange:
+    async def get_exchange_by_name(self, exchange_name: str) -> Exchange:
         exchange_key = f"exchange_{exchange_name}"
         cached_data = await self.redis.get(exchange_key)
         if cached_data:

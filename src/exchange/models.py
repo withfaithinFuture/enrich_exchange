@@ -11,7 +11,7 @@ class ExchangeModel(Base):
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     exchange_name: Mapped[str] = mapped_column(sa.String())
-    trust_score: Mapped[int] = mapped_column(sa.INT)
+    trust_score: Mapped[int] = mapped_column(sa.Integer())
 
 
     btc_price: Mapped[float] = mapped_column(sa.Float)
