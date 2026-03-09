@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from uuid import UUID
 
+from pydantic import BaseModel, ConfigDict
+
 
 @dataclass
 class Exchange:
@@ -12,3 +14,10 @@ class Exchange:
     btc_price: float
     eth_price: float
     sol_price: float
+
+
+class ErrorResponseSchema(BaseModel):
+    error: str
+    message: str
+
+    model_config = ConfigDict(extra='allow')

@@ -1,11 +1,10 @@
 import os
-
 import httpx
 import ujson
 from aiobreaker import CircuitBreaker
 from datetime import timedelta
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_exponential_jitter
-from src.exchange.exceptions import UnavailableServiceError, Server500Error
+from src.exchange.exceptions import UnavailableServiceError, check_status
 
 
 binance_breaker = CircuitBreaker(fail_max=3, timeout_duration=timedelta(seconds=15))
@@ -32,12 +31,13 @@ class BinancePriceService:
 
         try:
             response = await self.client.get(self.BASE_URL, params={"symbols": self.SYMBOLS_STR})
-
-            data = ujson.loads(response.text)
-            for item in data:
-                prices[item["symbol"]] = float(item["price"])
-
-            return prices
-
-        except Exception as e:
+        except httpx.RequestError:
             raise UnavailableServiceError(service_name="Binance")
+
+        check_status(response=response, object_name="Binance", object_type='Exchange')
+
+        data = ujson.loads(response.text)
+        for item in data:
+            prices[item["symbol"]] = float(item["price"])
+
+        return prices

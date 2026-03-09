@@ -18,8 +18,6 @@ class ExchangeRepository(IExchangeRepo, ABC):
         exchange_model = ExchangeModel(**asdict(exchange))
 
         self.session.add(exchange_model)
-        await self.session.flush()
-
         return exchange
 
 
@@ -29,7 +27,7 @@ class ExchangeRepository(IExchangeRepo, ABC):
         exchange_model = result.scalar_one_or_none()
 
         if not exchange_model:
-            raise NotFoundByNameError(exchange_name, 'Exchange')
+            return None
 
         exchange_args = {}
 
