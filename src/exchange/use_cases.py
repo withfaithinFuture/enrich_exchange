@@ -5,8 +5,7 @@ import ujson
 from fastapi.params import Depends
 from redis import Redis
 from tenacity import retry, wait_exponential_jitter, retry_if_exception_type, stop_after_attempt
-
-from src.exchange.exceptions import NotFoundByNameError, UnavailableServiceError, CacheNotSavedError
+from src.exchange.exceptions import NotFoundByNameError, CacheNotSavedError
 from src.exchange.redis_client import get_redis
 from src.binance.binance_price_service import BinancePriceService
 from src.exchange.exchange_entities import Exchange
@@ -41,9 +40,8 @@ class CreateExchangeMetricsUseCase:
 
 class GetExchangeUseCase:
 
-    def __init__(self, repo: IExchangeRepo, create_use_case: CreateExchangeMetricsUseCase, redis: Redis = Depends(get_redis)):
+    def __init__(self, repo: IExchangeRepo, redis: Redis = Depends(get_redis)):
         self.repo = repo
-        self.create_use_case = create_use_case
         self.redis = redis
 
 
@@ -81,3 +79,19 @@ class GetExchangeUseCase:
         await self.save_to_cache(exchange_key=exchange_key, data=data, ex=3600)
 
         return exchange
+
+
+class DeleteExchangeUseCase:
+
+    def __init__(self, repo: IExchangeRepo, redis: Redis = Depends(get_redis)):
+        self.repo = repo
+        self.redis = redis
+
+    async def delete_exchange_info(self, exchange_name: str) -> None:
+        exchange = self.repo.get_by_name(exchange_name=exchange_name)
+
+        if exchange:
+            await self.repo.delete_by_name(exchange_name=exchange_name)
+
+        exchange_key = f"exchange_{exchange_name}"
+        await self.redis.delete(exchange_key)

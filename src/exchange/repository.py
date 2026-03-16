@@ -2,7 +2,6 @@ from abc import ABC
 from dataclasses import asdict, fields
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.exchange.exceptions import NotFoundByNameError
 from src.exchange.exchange_entities import Exchange
 from src.exchange.interface import IExchangeRepo
 from src.exchange.models import ExchangeModel
@@ -35,3 +34,15 @@ class ExchangeRepository(IExchangeRepo, ABC):
             exchange_args[field.name] = getattr(exchange_model, field.name)
 
         return Exchange(**exchange_args)
+
+
+    async def delete_by_name(self, exchange_name: str):
+        query = select(ExchangeModel).where(ExchangeModel.exchange_name == exchange_name)
+        result = await self.session.execute(query)
+        exchange_data = result.scalar_one_or_none()
+
+        if exchange_data:
+            await self.session.delete(exchange_data)
+            return True
+
+        return False
