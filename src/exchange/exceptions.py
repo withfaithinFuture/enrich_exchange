@@ -1,16 +1,6 @@
 from src.exchange.exchange_entities import ErrorResponseSchema
 
 
-def check_status(response, object_name: str, object_type: str):
-    if response.status_code >= 500:
-        raise UnavailableServiceError(service_name=object_name)
-
-    if 400 <= response.status_code < 500:
-        if response.status_code == 404:
-            raise NotFoundByNameError(object_name=object_name, object_type=object_type)
-        raise BadValueError(field_name=object_name)
-
-
 class CacheNotSavedError(Exception):
     pass
 
@@ -58,4 +48,21 @@ class BadValueError(Exception):
             message=self.message
         )
 
+        super().__init__(self.message)
+
+
+class ExternalClientError(Exception):
+    def __init__(self, service_name: str, status_code: int, details: str):
+        self.service_name = service_name
+        self.status_code = status_code
+        self.details = details
+
+        self.error = f"{self.service_name}_client_error"
+        self.message = f"Request to {self.service_name} failed with status {self.status_code}"
+
+        self.error_schema = ErrorResponseSchema(
+            error=self.error,
+            message=self.message
+        )
+        
         super().__init__(self.message)

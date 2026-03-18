@@ -1,30 +1,28 @@
-from dotenv import load_dotenv
-load_dotenv()
-
-import os
 import httpx
 import ujson
 from aiobreaker import CircuitBreaker
 from datetime import timedelta
 from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_exponential_jitter
-from src.exchange.exceptions import UnavailableServiceError, check_status
-
-
-binance_breaker = CircuitBreaker(fail_max=3, timeout_duration=timedelta(seconds=15))
+from src.binance.utils import check_status
+from src.exchange.exceptions import UnavailableServiceError
+from src.settings import Settings
 
 
 class BinancePriceService:
 
-    BASE_URL = os.getenv('BASE_BINANCE_URL')
-    SYMBOLS_STR = os.getenv('SYMBOLS_STR')
+    BASE_URL = Settings.BASE_URL
+    SYMBOLS_STR = Settings.SYMBOLS_STR
+    SERVICE_NAME, SERVICE_TYPE = "Binance", "Exchange"
+
 
     def __init__(self):
         self.client = httpx.AsyncClient(timeout=15)
+        self.breaker = CircuitBreaker(fail_max=3, timeout_duration=timedelta(seconds=15))
+        self.get_prices = self.breaker(self.get_prices)
 
 
-    @binance_breaker
     @retry(
-        stop=stop_after_attempt(2),
+        stop=stop_after_attempt(3),
         wait=wait_exponential_jitter(1, max=5),
         retry=retry_if_exception_type(UnavailableServiceError),
         reraise=True
@@ -34,10 +32,10 @@ class BinancePriceService:
 
         try:
             response = await self.client.get(self.BASE_URL, params={"symbols": self.SYMBOLS_STR})
-        except httpx.RequestError:
-            raise UnavailableServiceError(service_name="Binance")
+        except Exception as e:
+            raise UnavailableServiceError(service_name=self.SERVICE_NAME)
 
-        check_status(response=response, object_name="Binance", object_type='Exchange')
+        check_status(response=response, object_name=self.SERVICE_NAME, object_type=self.SERVICE_TYPE)
 
         data = ujson.loads(response.text)
         for item in data:
