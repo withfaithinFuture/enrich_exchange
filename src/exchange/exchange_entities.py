@@ -13,10 +13,3 @@ class Exchange:
     btc_price: float
     eth_price: float
     sol_price: float
-
-
-class ErrorResponseSchema(BaseModel):
-    error: str
-    message: str
-
-    model_config = ConfigDict(extra='allow')

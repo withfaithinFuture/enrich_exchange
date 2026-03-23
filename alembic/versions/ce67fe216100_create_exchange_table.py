@@ -1,4 +1,4 @@
-"""refactor_exchange_table
+"""create_exchange_table
 
 Revision ID: ce67fe216100
 Revises: 
