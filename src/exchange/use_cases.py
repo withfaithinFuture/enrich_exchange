@@ -4,9 +4,8 @@ from random import randint
 import ujson
 from fastapi.params import Depends
 from redis import Redis
-from tenacity import retry, wait_exponential_jitter, retry_if_exception_type, stop_after_attempt
-from src.exchange.exceptions import NotFoundByNameError, CacheNotSavedError
-from src.exchange.redis_client import get_redis
+from src.exchange.exceptions import NotFoundByNameError
+from src.exchange.redis_client import get_redis, save_to_cache
 from src.binance.binance_price_service import BinancePriceService
 from src.exchange.exchange_entities import Exchange
 from src.exchange.interface import IExchangeRepo
@@ -23,6 +22,15 @@ class CreateExchangeMetricsUseCase:
 
         prices = await self.binance_service.get_prices()
 
+        existing_exchange = await self.repo.get_by_name(exchange_name=exchange_name)
+        if existing_exchange:
+            existing_exchange.btc_price = prices["BTCUSDT"]
+            existing_exchange.btc_price = prices["ETHUSDT"]
+            existing_exchange.btc_price = prices["SOLUSDT"]
+
+            await self.repo.update(exchange=existing_exchange)
+            return existing_exchange
+
         new_exchange = Exchange(
             id=uuid.uuid4(),
             exchange_name=exchange_name,
@@ -37,27 +45,11 @@ class CreateExchangeMetricsUseCase:
         return new_exchange
 
 
-
 class GetExchangeUseCase:
 
     def __init__(self, repo: IExchangeRepo, redis: Redis = Depends(get_redis)):
         self.repo = repo
         self.redis = redis
-
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential_jitter(initial=1, max=5),
-        retry=retry_if_exception_type(CacheNotSavedError),
-        reraise=True
-
-    )
-    async def save_to_cache(self, exchange_key: str, data: str, ex: int):
-        await self.redis.set(exchange_key, data, ex)
-
-        status_check = await self.redis.exists(exchange_key)
-        if not status_check:
-            raise CacheNotSavedError("Данные не добавились в кеш")
 
 
     async def get_exchange_by_name(self, exchange_name: str) -> Exchange:
@@ -76,7 +68,7 @@ class GetExchangeUseCase:
         exchange_dict['id'] = str(exchange_dict['id'])
         data = ujson.dumps(exchange_dict)
 
-        await self.save_to_cache(exchange_key=exchange_key, data=data, ex=3600)
+        await save_to_cache(exchange_key=exchange_key, data=data, ex=3600)
 
         return exchange
 

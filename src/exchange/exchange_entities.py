@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
 
 
 @dataclass

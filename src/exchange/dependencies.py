@@ -18,7 +18,6 @@ async def create_use_case(session=Depends(get_session)) -> CreateExchangeMetrics
 
 async def get_use_case(session=Depends(get_session), redis = Depends(get_redis)) -> GetExchangeUseCase:
     repo = ExchangeRepository(session)
-    binance_service = BinancePriceService()
 
     return GetExchangeUseCase(repo, redis)
 

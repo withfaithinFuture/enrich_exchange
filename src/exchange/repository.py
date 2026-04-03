@@ -36,7 +36,13 @@ class ExchangeRepository(IExchangeRepo, ABC):
         return Exchange(**exchange_args)
 
 
-    async def delete_by_name(self, exchange_name: str):
+    async def update_by_name(self, exchange: Exchange) -> Exchange:
+        await self.session.flush()
+        await self.session.refresh(exchange)
+        return exchange
+
+
+    async def delete_by_name(self, exchange_name: str) -> bool:
         query = select(ExchangeModel).where(ExchangeModel.exchange_name == exchange_name)
         result = await self.session.execute(query)
         exchange_data = result.scalar_one_or_none()

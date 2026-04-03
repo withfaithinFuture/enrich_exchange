@@ -1,4 +1,5 @@
-from src.exchange.exceptions import UnavailableServiceError, NotFoundByNameError, BadValueError, ExternalClientError
+from src.exceptions import UnavailableServiceError, ExternalClientError
+from src.exchange.exceptions import NotFoundByNameError
 
 
 def check_status(response, object_name: str, object_type: str):

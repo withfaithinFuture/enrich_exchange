@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import UJSONResponse
 from src.exchange.redis_client import redis_client
 from src.exchange.routers import router as exchange_routers
 from src.exchange.exception_handler import register_handler
@@ -23,7 +22,6 @@ def get_app() -> FastAPI:
     app = FastAPI(
         docs_url="/docs",
         openapi_url="/openapi.json",
-        default_response_class=UJSONResponse,
         lifespan=lifespan
     )
 

@@ -4,7 +4,7 @@ import uvicorn
 
 async def main() -> None:
     uvicorn.run(
-        "src.main:get_app",
+        "src.app:get_app",
         host="0.0.0.0",
         port=8001,
         reload=True,
