@@ -15,7 +15,6 @@ class ExchangeRepository(IExchangeRepo, ABC):
 
     async def create(self, exchange: Exchange) -> Exchange:
         exchange_model = ExchangeModel(**asdict(exchange))
-
         self.session.add(exchange_model)
         return exchange
 
@@ -25,18 +24,18 @@ class ExchangeRepository(IExchangeRepo, ABC):
         result = await self.session.execute(query)
         exchange_model = result.scalar_one_or_none()
 
-        if not exchange_model:
-            return None
+        if exchange_model:
+            exchange_args = {}
 
-        exchange_args = {}
+            for field in fields(Exchange):
+                exchange_args[field.name] = getattr(exchange_model, field.name)
 
-        for field in fields(Exchange):
-            exchange_args[field.name] = getattr(exchange_model, field.name)
+            return Exchange(**exchange_args)
 
-        return Exchange(**exchange_args)
+        return exchange_model
 
 
-    async def update_by_name(self, exchange: Exchange) -> Exchange:
+    async def update(self, exchange: Exchange) -> Exchange:
         await self.session.flush()
         await self.session.refresh(exchange)
         return exchange

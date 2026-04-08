@@ -2,10 +2,10 @@ from fastapi import Depends
 
 from exchange.use_cases import DeleteExchangeUseCase
 from src.binance.binance_price_service import BinancePriceService
-from src.exchange.redis_client import get_redis
+from redis_client.redis_client import get_redis
 from src.exchange.use_cases  import CreateExchangeMetricsUseCase
 from src.exchange.use_cases import GetExchangeUseCase
-from src.db import get_session
+from db.db import get_session
 from src.exchange.repository import ExchangeRepository
 
 

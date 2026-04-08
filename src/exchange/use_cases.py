@@ -5,7 +5,7 @@ import ujson
 from fastapi.params import Depends
 from redis import Redis
 from src.exchange.exceptions import NotFoundByNameError
-from src.exchange.redis_client import get_redis, save_to_cache
+from redis_client.redis_client import get_redis, save_to_cache
 from src.binance.binance_price_service import BinancePriceService
 from src.exchange.exchange_entities import Exchange
 from src.exchange.interface import IExchangeRepo
@@ -18,16 +18,27 @@ class CreateExchangeMetricsUseCase:
         self.binance_service = binance_service
 
 
+    async def map_prices(self, exchange: Exchange, fresh_prices: dict) -> Exchange:
+        symbols = {
+            "BTCUSDT": "btc_price",
+            "ETHUSDT": "eth_price",
+            "SOLUSDT": "sol_price"
+        }
+
+        for symbol, field in symbols.items():
+            if hasattr(exchange, field):
+                setattr(exchange, field, fresh_prices[symbol])
+
+        return exchange
+
+
     async def create_exchange_metrics(self, exchange_name: str) -> Exchange:
 
         prices = await self.binance_service.get_prices()
 
         existing_exchange = await self.repo.get_by_name(exchange_name=exchange_name)
         if existing_exchange:
-            existing_exchange.btc_price = prices["BTCUSDT"]
-            existing_exchange.btc_price = prices["ETHUSDT"]
-            existing_exchange.btc_price = prices["SOLUSDT"]
-
+            await self.map_prices(exchange=existing_exchange, fresh_prices=prices)
             await self.repo.update(exchange=existing_exchange)
             return existing_exchange
 
@@ -41,7 +52,7 @@ class CreateExchangeMetricsUseCase:
         )
 
         await self.repo.create(new_exchange)
-
+        await self.repo.update(exchange=new_exchange)
         return new_exchange
 
 
