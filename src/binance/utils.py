@@ -1,5 +1,5 @@
 from src.exceptions import UnavailableServiceError, ExternalClientError
-from src.exchange.exceptions import NotFoundByNameError
+from src.exchanges.exceptions import NotFoundByNameError
 
 
 def check_status(response, object_name: str, object_type: str):

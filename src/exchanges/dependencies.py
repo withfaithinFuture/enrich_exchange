@@ -1,12 +1,12 @@
 from fastapi import Depends
 
-from exchange.use_cases import DeleteExchangeUseCase
+from exchanges.use_cases import DeleteExchangeUseCase
 from src.binance.binance_price_service import BinancePriceService
 from redis_client.redis_client import get_redis
-from src.exchange.use_cases  import CreateExchangeMetricsUseCase
-from src.exchange.use_cases import GetExchangeUseCase
+from src.exchanges.use_cases  import CreateExchangeMetricsUseCase
+from src.exchanges.use_cases import GetExchangeUseCase
 from src.db.db import get_session
-from src.exchange.repository import ExchangeRepository
+from src.exchanges.repository import ExchangeRepository
 
 
 async def create_use_case(session=Depends(get_session)) -> CreateExchangeMetricsUseCase:

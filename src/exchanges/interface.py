@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from src.exchange.exchange_entities import Exchange
+from src.exchanges.exchange_entities import Exchange
 
 
 class IExchangeRepo(ABC):

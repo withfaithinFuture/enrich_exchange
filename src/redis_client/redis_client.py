@@ -1,6 +1,6 @@
 from redis.asyncio import Redis
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type
-from src.exchange.exceptions import CacheNotSavedError
+from src.exchanges.exceptions import CacheNotSavedError
 
 
 redis_client = Redis(host='localhost', port=6379, db=0, decode_responses=True)

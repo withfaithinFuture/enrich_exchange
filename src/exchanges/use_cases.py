@@ -4,11 +4,11 @@ from random import randint
 import ujson
 from fastapi.params import Depends
 from redis import Redis
-from src.exchange.exceptions import NotFoundByNameError
+from src.exchanges.exceptions import NotFoundByNameError
 from src.redis_client.redis_client import get_redis, save_to_cache
 from src.binance.binance_price_service import BinancePriceService
-from src.exchange.exchange_entities import Exchange
-from src.exchange.interface import IExchangeRepo
+from src.exchanges.exchange_entities import Exchange
+from src.exchanges.interface import IExchangeRepo
 
 
 class CreateExchangeMetricsUseCase:

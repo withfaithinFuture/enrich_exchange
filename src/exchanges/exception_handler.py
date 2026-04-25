@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import UJSONResponse
 from starlette import status
 from src.exceptions import UnavailableServiceError, BadValueError
-from src.exchange.exceptions import NotFoundByNameError
+from src.exchanges.exceptions import NotFoundByNameError
 
 
 async def unavailable_service_handler(request: Request, exception: UnavailableServiceError):

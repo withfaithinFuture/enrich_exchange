@@ -1,12 +1,11 @@
 from abc import ABC
 from dataclasses import asdict, fields
 from typing import Optional
-
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.exchange.exchange_entities import Exchange
-from src.exchange.interface import IExchangeRepo
-from src.exchange.models import ExchangeModel
+from src.exchanges.exchange_entities import Exchange
+from src.exchanges.interface import IExchangeRepo
+from src.exchanges.models import ExchangeModel
 
 
 class ExchangeRepository(IExchangeRepo, ABC):

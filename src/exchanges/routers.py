@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from starlette import status
-from src.exchange.use_cases import CreateExchangeMetricsUseCase, DeleteExchangeUseCase
-from src.exchange.use_cases import GetExchangeUseCase
-from src.exchange.dependencies import get_use_case, create_use_case, delete_use_case
+from src.exchanges.use_cases import CreateExchangeMetricsUseCase, DeleteExchangeUseCase
+from src.exchanges.use_cases import GetExchangeUseCase
+from src.exchanges.dependencies import get_use_case, create_use_case, delete_use_case
 
 
 router = APIRouter(tags=['Actions with exchanges'])

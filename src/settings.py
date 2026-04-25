@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     SYMBOLS_STR: str = Field(env='SYMBOLS_STR')
     SERVICE_NAME: str = Field(env='SERVICE_NAME')
     SERVICE_TYPE: str = Field(env='SERVICE_TYPE')
+    KAFKA_URL: str = Field(env='KAFKA_URL')
 
     class Config:
         env_file = Path(__file__).resolve().parent.parent / ".env"
