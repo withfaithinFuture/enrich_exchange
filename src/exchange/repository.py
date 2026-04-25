@@ -1,5 +1,7 @@
 from abc import ABC
 from dataclasses import asdict, fields
+from typing import Optional
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from src.exchange.exchange_entities import Exchange
@@ -19,7 +21,7 @@ class ExchangeRepository(IExchangeRepo, ABC):
         return exchange
 
 
-    async def get_by_name(self, exchange_name: str) -> Exchange | None:
+    async def get_by_name(self, exchange_name: str) -> Optional[Exchange]:
         query = select(ExchangeModel).where(ExchangeModel.exchange_name == exchange_name)
         result = await self.session.execute(query)
         exchange_model = result.scalar_one_or_none()
@@ -36,9 +38,17 @@ class ExchangeRepository(IExchangeRepo, ABC):
 
 
     async def update(self, exchange: Exchange) -> Exchange:
+        query = select(ExchangeModel).where(ExchangeModel.id == exchange.id)
+        result = await self.session.execute(query)
+        exchange_model = result.scalar_one_or_none()
+
+        exchange_entity = asdict(exchange)
+        for key, value in exchange_entity.items():
+            setattr(exchange_model, key, value)
+
         await self.session.flush()
-        await self.session.refresh(exchange)
         return exchange
+
 
 
     async def delete_by_name(self, exchange_name: str) -> bool:

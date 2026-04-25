@@ -10,7 +10,7 @@ from src.settings import settings
 
 class BinancePriceService:
 
-    BASE_URL = settings.BASE_URL
+    BASE_BINANCE_URL = settings.BASE_BINANCE_URL
     SYMBOLS_STR = settings.SYMBOLS_STR
     SERVICE_NAME = settings.SERVICE_NAME
     SERVICE_TYPE = settings.SERVICE_TYPE
@@ -30,7 +30,7 @@ class BinancePriceService:
     )
     async def get_prices(self) -> dict:
         prices = {}
-        response = await self.client.get(self.BASE_URL)
+        response = await self.client.get(self.BASE_BINANCE_URL)
 
         check_status(response=response, object_name=self.SERVICE_NAME, object_type=self.SERVICE_TYPE)
 

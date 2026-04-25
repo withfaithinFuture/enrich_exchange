@@ -5,7 +5,7 @@ from src.binance.binance_price_service import BinancePriceService
 from redis_client.redis_client import get_redis
 from src.exchange.use_cases  import CreateExchangeMetricsUseCase
 from src.exchange.use_cases import GetExchangeUseCase
-from db.db import get_session
+from src.db.db import get_session
 from src.exchange.repository import ExchangeRepository
 
 

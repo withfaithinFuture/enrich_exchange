@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from redis_client.redis_client import redis_client
+from src.redis_client.redis_client import redis_client
 from src.exchange.routers import router as exchange_routers
 from src.exchange.exception_handler import register_handler
 

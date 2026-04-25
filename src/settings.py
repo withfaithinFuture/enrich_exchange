@@ -5,7 +5,7 @@ from pathlib import Path
 
 class Settings(BaseSettings):
     postgres_url: PostgresDsn = Field(env='POSTGRES_URL')
-    BASE_URL: str = Field(env='BASE_BINANCE_URL')
+    BASE_BINANCE_URL: str = Field(env='BASE_BINANCE_URL')
     SYMBOLS_STR: str = Field(env='SYMBOLS_STR')
     SERVICE_NAME: str = Field(env='SERVICE_NAME')
     SERVICE_TYPE: str = Field(env='SERVICE_TYPE')

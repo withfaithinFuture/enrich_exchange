@@ -5,7 +5,7 @@ import ujson
 from fastapi.params import Depends
 from redis import Redis
 from src.exchange.exceptions import NotFoundByNameError
-from redis_client.redis_client import get_redis, save_to_cache
+from src.redis_client.redis_client import get_redis, save_to_cache
 from src.binance.binance_price_service import BinancePriceService
 from src.exchange.exchange_entities import Exchange
 from src.exchange.interface import IExchangeRepo
