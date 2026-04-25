@@ -1,0 +1,41 @@
+services:
+
+  api:
+    build: .
+    ports:
+      - "8001:8001"
+    env_file:
+      - .env
+    depends_on:
+      - db
+      - redis_v2
+    environment:
+      - REDIS_URL=redis://redis_v2:6379/0
+    command: >
+      sh -c "sleep 10 && alembic upgrade head &&
+             python -m src.main"
+
+
+  db:
+    image: postgres:16
+    volumes:
+      - pgdata_exchange_v2:/var/lib/postgresql/data
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+
+
+  redis_v2:
+    image: redis:7-alpine
+    container_name: 'redis_v2'
+    ports:
+      - "6380:6379"
+
+
+volumes:
+  pgdata_exchange_v2:
