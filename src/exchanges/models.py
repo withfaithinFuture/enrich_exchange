@@ -1,8 +1,8 @@
-from sqlalchemy.orm import declarative_base, Mapped
+from sqlalchemy.orm import Mapped
 from uuid import UUID, uuid4
 import sqlalchemy as sa
 from sqlalchemy.testing.schema import mapped_column
-from src.db.base_service import Base
+from src.base_service import Base
 
 
 class ExchangeModel(Base):

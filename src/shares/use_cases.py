@@ -3,6 +3,15 @@ from src.shares.interface import IUserRepo
 from src.shares.user_entities import User
 
 
+COMMISSIONS = {
+    't-bank': 0.015,
+    'vtb': 0.03,
+    'Sber': 0.025,
+    'Alfa-Bank': 0.035,
+    'Gazprombank': 0.04
+}
+
+
 class CreateUserInfoUseCase:
 
     def __init__(self, repo: IUserRepo):
@@ -10,16 +19,8 @@ class CreateUserInfoUseCase:
 
 
     def set_commission(self, shares_broker: str):
-        commissions = {
-            't-bank': 0.015,
-            'vtb': 0.03,
-            'Sber': 0.025,
-            'Alfa-Bank': 0.035,
-            'Gazprombank': 0.04
-        }
-
-        if shares_broker in commissions:
-            return commissions[shares_broker]
+        if shares_broker in COMMISSIONS:
+            return COMMISSIONS[shares_broker]
         else:
             return 0.1
 

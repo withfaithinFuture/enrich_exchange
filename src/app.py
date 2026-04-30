@@ -1,14 +1,16 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from src.infrastructure.enrich_consumer_handler import EnrichConsumerHandler
 from src.settings import settings
-from src.redis_client.redis_client import redis_client
+from src.infrastructure.redis_client import redis_client
 from src.exchanges.routers import router as exchange_routers
 from src.exchanges.exception_handler import register_handler
-from src.kafka_client.kafka_consumer import EnrichConsumer
+from src.infrastructure.kafka_consumer import EnrichConsumer
 
 
-kafka_consumer = EnrichConsumer(servers=settings.KAFKA_URL)
+consumer_handler = EnrichConsumerHandler()
+kafka_consumer = EnrichConsumer(servers=settings.KAFKA_URL, consumer_handler=consumer_handler)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
