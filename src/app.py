@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.infrastructure.enrich_consumer_handler import EnrichConsumerHandler
+from src.infrastructure.kafka_consumer_handler import KafkaConsumerHandler
 from src.settings import settings
 from src.infrastructure.redis_client import redis_client
 from src.exchanges.routers import router as exchange_routers
@@ -9,7 +9,7 @@ from src.exchanges.exception_handler import register_handler
 from src.infrastructure.kafka_consumer import EnrichConsumer
 
 
-consumer_handler = EnrichConsumerHandler()
+consumer_handler = KafkaConsumerHandler()
 kafka_consumer = EnrichConsumer(servers=settings.KAFKA_URL, consumer_handler=consumer_handler)
 
 @asynccontextmanager

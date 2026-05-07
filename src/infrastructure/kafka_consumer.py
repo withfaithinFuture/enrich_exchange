@@ -1,10 +1,12 @@
 import logging
 import asyncio
 from typing import Dict
-
 import ujson
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-from src.infrastructure.enrich_consumer_handler import EnrichConsumerHandler
+from aiokafka.errors import KafkaError
+from pydantic import ValidationError
+from src.exceptions import BaseAppError, BaseTempError
+from src.infrastructure.kafka_consumer_handler import KafkaConsumerHandler
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
 
@@ -12,11 +14,12 @@ logger = logging.getLogger('consumer.kafka_consumer')
 
 class EnrichConsumer:
 
-    def __init__(self, servers: str, consumer_handler: EnrichConsumerHandler):
+    def __init__(self, servers: str, consumer_handler: KafkaConsumerHandler):
         self.main_topic = "enrich_user_shares_data"
         self.dlq_topic = "enrich_user_shares_data_dlq"
         self.consumer_handler = consumer_handler
         self.created_task: asyncio.Task | None = None
+        self.is_started = False
 
         self.consumer = AIOKafkaConsumer(
             self.main_topic,
@@ -43,13 +46,22 @@ class EnrichConsumer:
 
 
     async def start(self):
+        if self.is_started:
+            logger.warning("Consumer и DLQ-Producer из DDD-сервиса уже запущены!")
+            return
+
         await self.consumer.start()
         await self.dlq_producer.start()
-        logger.info("Consumer и DLQ-Produces из DDD-сервиса начали работу")
+        self.is_started = True
+        logger.info("Consumer и DLQ-Producer из DDD-сервиса начали работу")
         self.created_task = asyncio.create_task(self.consume_message())
 
 
     async def stop(self):
+        if not self.is_started:
+            logger.warning("Consumer и DLQ-Producer из DDD-сервиса уже остановлены")
+            return
+
         if self.created_task:
             try:
                 self.created_task.cancel()
@@ -58,6 +70,7 @@ class EnrichConsumer:
             except asyncio.CancelledError:
                 logger.warning("Цикл чтения messages успешно остановлен")
 
+        self.is_started = False
         await self.consumer.stop()
         await self.dlq_producer.stop()
         logger.info("Consumer и DLQ-Produces из DDD-сервиса закончили работу")
@@ -72,41 +85,68 @@ class EnrichConsumer:
         bytes_msg = message.value
         message_id = 'unknown_msg_id'
         payload = None
+        deserialize_error = False
 
         try:
             parsed_data = self.deserializer(data=bytes_msg)
             payload = parsed_data
             message_id = parsed_data.get('event_id', message_id)
 
-        except Exception as parsing_error:
+        except ValueError as parsing_error:
             logger.error(f"Ошибка парсинга message: {parsing_error}")
             payload = bytes_msg.decode('utf-8', errors='replace')
+            deserialize_error = True
 
         dlq_payload = {
             "event_id": message_id,
             "received_payload": payload,
             "error": error_message,
+            "deserialize_error": deserialize_error,
             "failed_partition": message.partition,
             "offset": message.offset
         }
-        await self.dlq_producer.send_and_wait(topic=self.dlq_topic, value=dlq_payload)
-        logger.info(f"Сообщение с id={message_id} успешно отправлено в DLQ")
+
+        try:
+            await self.dlq_producer.send_and_wait(topic=self.dlq_topic, value=dlq_payload)
+            logger.info(f"Сообщение с id={message_id} успешно отправлено в DLQ")
+
+        except Exception as dlq_error:
+            logger.error(f"Не удалось отправить сообщение в DLQ - {dlq_error}")
+            raise dlq_error
 
 
     async def consume_message(self):
-        while True:
+        while self.is_started:
             try:
                 async for message in self.consumer:
                     try:
                         payload_dict = self.deserializer(message.value)
-                        await self.consumer_handler.process_one_message(payload=payload_dict)
+                        await self.consumer_handler.process_one_message(payload=payload_dict, partition=message.partition, offset=message.offset)
                         await self.consumer.commit()
 
-                    except Exception as e:
-                        logger.error(f"Ошибка парсинга или бизнес-логики: {e}. Кидаем в DLQ")
-                        await self.send_dlq_messages(message=message, error_message=str(e))
+                    except ValueError as parse_error:
+                        logger.error(f"Ошибка парсинга или бизнес-логики -  {parse_error}. Кидаем в DLQ")
+                        await self.send_dlq_messages(message=message, error_message=str(parse_error))
                         await self.consumer.commit()
+
+                    except BaseAppError as app_error:
+                        logger.error(f"Бизнес-ошибка - {app_error}. Кидаем в DLQ")
+                        await self.send_dlq_messages(message=message, error_message=str(app_error))
+                        await self.consumer.commit()
+
+                    except (BaseTempError, KafkaError) as infr_error:
+                        logger.error(f"Ошибка в инфраструктуре - {infr_error}")
+                        raise infr_error
+
+                    if not self.is_started:
+                        logger.info("Выход из цикла чтения Кафки по флагу is_started")
+                        break
+
+            except asyncio.CancelledError:
+                logger.warning("Чтение консьюмера было отменено")
+                break
 
             except Exception as e:
-                logger.warning(f"Перезапуск цикла коньюмера через 5 сек из-за ошибки - {e}")
-                await asyncio.sleep(5)
+                if self.is_started:
+                    logger.warning(f"Перезапуск цикла коньюмера через 5 сек из-за ошибки - {e}")
+                    await asyncio.sleep(5)
