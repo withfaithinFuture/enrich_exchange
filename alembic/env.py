@@ -5,7 +5,7 @@ from alembic import context
 from src.shares.models import UserSharesModel
 from src.shares.models import UserSharesMessages
 from src.exchanges.models import ExchangeModel
-from src.db.base_service import Base
+from src.base_service import Base
 
 
 # this is the Alembic Config object, which provides

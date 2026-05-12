@@ -4,10 +4,9 @@ from typing import Dict
 import ujson
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import KafkaError
-from pydantic import ValidationError
 from src.exceptions import BaseAppError, BaseTempError
 from src.infrastructure.kafka_consumer_handler import KafkaConsumerHandler
-from tenacity import retry, stop_after_attempt, wait_exponential_jitter
+from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception
 
 
 logger = logging.getLogger('consumer.kafka_consumer')
@@ -45,7 +44,12 @@ class EnrichConsumer:
         return ujson.loads(data.decode('utf-8'))
 
 
-    async def start(self):
+    @staticmethod
+    def is_retryable(exc: BaseException) -> bool:
+        return isinstance(exc, KafkaError) and exc.retriable
+
+
+    async def start(self) -> None:
         if self.is_started:
             logger.warning("Consumer и DLQ-Producer из DDD-сервиса уже запущены!")
             return
@@ -57,7 +61,7 @@ class EnrichConsumer:
         self.created_task = asyncio.create_task(self.consume_message())
 
 
-    async def stop(self):
+    async def stop(self) -> None:
         if not self.is_started:
             logger.warning("Consumer и DLQ-Producer из DDD-сервиса уже остановлены")
             return
@@ -79,9 +83,10 @@ class EnrichConsumer:
     @retry(
         stop=stop_after_attempt(max_attempt_number=3),
         wait=wait_exponential_jitter(initial=1, max=5),
+        retry=retry_if_exception(is_retryable),
         reraise=True
     )
-    async def send_dlq_messages(self, message, error_message: str):
+    async def send_dlq_messages(self, message, error_message: str) -> None:
         bytes_msg = message.value
         message_id = 'unknown_msg_id'
         payload = None
@@ -115,28 +120,36 @@ class EnrichConsumer:
             raise dlq_error
 
 
-    async def consume_message(self):
+    async def consume_message(self) -> None:
         while self.is_started:
             try:
                 async for message in self.consumer:
                     try:
                         payload_dict = self.deserializer(message.value)
+                    except ValueError as parsing_error:
+                        logger.error(f"Ошибка парсинга в топике: {parsing_error}. Кидаем в DLQ")
+                        await self.send_dlq_messages(message=message, error_message=str(parsing_error))
+                        await self.consumer.commit()
+                        continue
+
+                    try:
                         await self.consumer_handler.process_one_message(payload=payload_dict, partition=message.partition, offset=message.offset)
                         await self.consumer.commit()
-
-                    except ValueError as parse_error:
-                        logger.error(f"Ошибка парсинга или бизнес-логики -  {parse_error}. Кидаем в DLQ")
-                        await self.send_dlq_messages(message=message, error_message=str(parse_error))
-                        await self.consumer.commit()
-
                     except BaseAppError as app_error:
                         logger.error(f"Бизнес-ошибка - {app_error}. Кидаем в DLQ")
                         await self.send_dlq_messages(message=message, error_message=str(app_error))
                         await self.consumer.commit()
 
-                    except (BaseTempError, KafkaError) as infr_error:
+                    except BaseTempError as infr_error:
                         logger.error(f"Ошибка в инфраструктуре - {infr_error}")
                         raise infr_error
+
+                    except KafkaError as kafka_error:
+                        if kafka_error.retriable:
+                            logger.warning(f"Временная ошибка кафки - {kafka_error}")
+                            raise kafka_error
+                        logger.error(f"Фатальная ошибка кафки - {kafka_error}")
+                        raise kafka_error
 
                     if not self.is_started:
                         logger.info("Выход из цикла чтения Кафки по флагу is_started")

@@ -2,7 +2,7 @@ from src.exceptions import UnavailableServiceError, ExternalClientError
 from src.exchanges.exceptions import NotFoundByNameError
 
 
-def check_status(response, object_name: str, object_type: str):
+def check_status(response, object_name: str, object_type: str) -> None:
     if response.status_code >= 500:
         raise UnavailableServiceError(service_name=object_name)
 

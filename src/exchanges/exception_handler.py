@@ -5,7 +5,7 @@ from src.exceptions import UnavailableServiceError, BadValueError
 from src.exchanges.exceptions import NotFoundByNameError
 
 
-async def unavailable_service_handler(request: Request, exception: UnavailableServiceError):
+async def unavailable_service_handler(request: Request, exception: UnavailableServiceError) -> UJSONResponse:
 
     return UJSONResponse(
         status_code=status.HTTP_504_GATEWAY_TIMEOUT,
@@ -13,7 +13,7 @@ async def unavailable_service_handler(request: Request, exception: UnavailableSe
     )
 
 
-async def not_found_handler(request: Request, exception: NotFoundByNameError):
+async def not_found_handler(request: Request, exception: NotFoundByNameError) -> UJSONResponse:
 
     return UJSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
@@ -21,7 +21,7 @@ async def not_found_handler(request: Request, exception: NotFoundByNameError):
     )
 
 
-async def bad_value_handler(request: Request, exception: BadValueError):
+async def bad_value_handler(request: Request, exception: BadValueError) -> UJSONResponse:
 
     return UJSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -30,7 +30,7 @@ async def bad_value_handler(request: Request, exception: BadValueError):
 
 
 
-def register_handler(app: FastAPI):
+def register_handler(app: FastAPI) -> None:
     app.add_exception_handler(UnavailableServiceError, unavailable_service_handler)
     app.add_exception_handler(NotFoundByNameError, not_found_handler)
     app.add_exception_handler(BadValueError, bad_value_handler)

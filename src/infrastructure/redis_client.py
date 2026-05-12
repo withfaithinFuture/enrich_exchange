@@ -15,9 +15,9 @@ async def get_redis():
     reraise=True
 
 )
-async def save_to_cache(self, exchange_key: str, data: str, ex: int):
-    await self.redis.set(exchange_key, data, ex)
-    status_check = await self.redis.exists(exchange_key)
+async def save_to_cache(redis: Redis, exchange_key: str, data: str, ex: int):
+    await redis.set(exchange_key, data, ex)
+    status_check = await redis.exists(exchange_key)
 
     if not status_check:
         raise CacheNotSavedError("Данные не добавились в кеш")

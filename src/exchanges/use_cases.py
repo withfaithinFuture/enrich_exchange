@@ -2,8 +2,8 @@ import uuid
 from dataclasses import asdict
 from random import randint
 import ujson
-from fastapi.params import Depends
 from redis import Redis
+
 from src.exchanges.exceptions import NotFoundByNameError
 from src.infrastructure.redis_client import get_redis, save_to_cache
 from src.binance.binance_price_service import BinancePriceService
@@ -58,7 +58,7 @@ class CreateExchangeMetricsUseCase:
 
 class GetExchangeUseCase:
 
-    def __init__(self, repo: IExchangeRepo, redis: Redis = Depends(get_redis)):
+    def __init__(self, repo: IExchangeRepo, redis: Redis):
         self.repo = repo
         self.redis = redis
 
@@ -79,19 +79,19 @@ class GetExchangeUseCase:
         exchange_dict['id'] = str(exchange_dict['id'])
         data = ujson.dumps(exchange_dict)
 
-        await save_to_cache(exchange_key=exchange_key, data=data, ex=3600)
+        await save_to_cache(redis=self.redis, exchange_key=exchange_key, data=data, ex=3600)
 
         return exchange
 
 
 class DeleteExchangeUseCase:
 
-    def __init__(self, repo: IExchangeRepo, redis: Redis = Depends(get_redis)):
+    def __init__(self, repo: IExchangeRepo, redis: Redis):
         self.repo = repo
         self.redis = redis
 
     async def delete_exchange_info(self, exchange_name: str) -> None:
-        exchange = self.repo.get_by_name(exchange_name=exchange_name)
+        exchange = await self.repo.get_by_name(exchange_name=exchange_name)
 
         if exchange:
             await self.repo.delete_by_name(exchange_name=exchange_name)
