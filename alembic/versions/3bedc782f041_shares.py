@@ -1,8 +1,8 @@
-"""add kafka consumer and shares
+"""shares
 
-Revision ID: fbd4b5f7d90c
+Revision ID: 3bedc782f041
 Revises: ce67fe216100
-Create Date: 2026-04-25 16:03:00.488898
+Create Date: 2026-05-13 20:32:59.162372
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'fbd4b5f7d90c'
+revision: str = '3bedc782f041'
 down_revision: Union[str, Sequence[str], None] = 'ce67fe216100'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -30,6 +30,19 @@ def upgrade() -> None:
     sa.Column('sol_price', sa.Float(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('user_shares_messages',
+    sa.Column('message_id', sa.Uuid(), nullable=False),
+    sa.Column('processed_time', sa.DateTime(), nullable=False),
+    sa.PrimaryKeyConstraint('message_id')
+    )
+    op.create_table('users_shares',
+    sa.Column('user_id', sa.Uuid(), nullable=False),
+    sa.Column('username', sa.String(), nullable=False),
+    sa.Column('email', sa.String(), nullable=False),
+    sa.Column('shares_broker', sa.String(), nullable=False),
+    sa.Column('broker_commission', sa.Float(), nullable=False),
+    sa.PrimaryKeyConstraint('user_id')
+    )
     op.drop_table('exchange')
     # ### end Alembic commands ###
 
@@ -46,5 +59,7 @@ def downgrade() -> None:
     sa.Column('sol_price', sa.DOUBLE_PRECISION(precision=53), autoincrement=False, nullable=False),
     sa.PrimaryKeyConstraint('id', name=op.f('exchange_pkey'))
     )
+    op.drop_table('users_shares')
+    op.drop_table('user_shares_messages')
     op.drop_table('exchanges')
     # ### end Alembic commands ###
