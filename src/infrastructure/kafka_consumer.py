@@ -8,6 +8,7 @@ from src.exceptions import BaseAppError, BaseTempError
 from src.infrastructure.kafka_consumer_handler import KafkaConsumerHandler
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception
 from src.settings import settings
+from src.infrastructure.exceptions import DeserializationError
 
 
 logger = logging.getLogger('consumer.kafka_consumer')
@@ -43,7 +44,10 @@ class EnrichConsumer:
 
     @staticmethod
     def deserializer(data: bytes) -> Dict:
-        return ujson.loads(data.decode('utf-8'))
+        try:
+            return ujson.loads(data.decode('utf-8'))
+        except (ValueError, UnicodeDecodeError) as parsing_error:
+            raise DeserializationError(f"Ошибка парсинга message: {parsing_error}")
 
 
     @staticmethod
@@ -101,7 +105,7 @@ class EnrichConsumer:
             payload = parsed_data
             message_id = parsed_data.get('event_id', message_id)
 
-        except ValueError as parsing_error:
+        except DeserializationError as parsing_error:
             logger.error(f"Ошибка парсинга message: {parsing_error}")
             payload = bytes_msg.decode('utf-8', errors='replace')
             deserialize_error = True
@@ -116,18 +120,18 @@ class EnrichConsumer:
         }
 
         try:
-            await self.dlq_producer.send_and_wait(topic=self.dlq_topic, value=dlq_payload)
+            await self.dlq_producer.send_and_wait(key=str(message_id).encode('utf-8'), topic=self.dlq_topic, value=dlq_payload)
             logger.info(f"Сообщение с id={message_id} успешно отправлено в DLQ")
 
         except Exception as dlq_error:
-            logger.error(f"Не удалось отправить сообщение в DLQ - {dlq_error}")
+            logger.exception(f"Не удалось отправить сообщение в DLQ - {dlq_error}")
             raise dlq_error
 
 
     async def handle_one_message(self, message) -> None:
         try:
             payload_dict = self.deserializer(message.value)
-        except ValueError as parsing_error:
+        except DeserializationError as parsing_error:
             logger.error(f"Ошибка парсинга в топике: {parsing_error}. Кидаем в DLQ")
             await self.send_dlq_messages(message=message, error_message=str(parsing_error))
             await self.consumer.commit()

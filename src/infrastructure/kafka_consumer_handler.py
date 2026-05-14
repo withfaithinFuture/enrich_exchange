@@ -3,7 +3,7 @@ import uuid
 from typing import Dict
 from pydantic import ValidationError
 from sqlalchemy import select
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, IntegrityError
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter, retry_if_exception_type
 from src.exceptions import BadValueError, BaseTempError
 from src.schemas import IncomingEnrichPayload
@@ -52,5 +52,12 @@ class KafkaConsumerHandler:
             await use_case.create_user_commission(username=username, email=email, shares_broker=shares_broker)
 
             session.add(UserSharesMessages(message_id=uuid.UUID(message_id)))
-            await session.commit()
-            logger.info(f"Сообщение с id={message_id} успешно обработано. Партиция - {partition}, оффсет - {offset}")
+
+            try:
+                await session.commit()
+                logger.info(f"Сообщение с id={message_id} успешно обработано. Партиция - {partition}, оффсет - {offset}")
+
+            except IntegrityError:
+                await session.rollback()
+                logger.warning(f"Сообщение с id={message_id} только что уже было обработано")
+                return

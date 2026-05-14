@@ -3,7 +3,6 @@ from dataclasses import asdict
 from random import randint
 import ujson
 from redis import Redis
-
 from src.exchanges.exceptions import NotFoundByNameError
 from src.infrastructure.redis_client import get_redis, save_to_cache
 from src.binance.binance_price_service import BinancePriceService
