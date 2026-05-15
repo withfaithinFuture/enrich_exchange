@@ -6,7 +6,7 @@ from src.base_service import Base
 
 
 class ExchangeModel(Base):
-    __tablename__ = 'exchanges'
+    __tablename__ = 'exchange'
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     exchange_name: Mapped[str] = mapped_column(sa.String())
