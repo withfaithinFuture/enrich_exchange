@@ -1,7 +1,15 @@
 from src.schemas import ErrorResponseSchema
 
 
-class UnavailableServiceError(Exception):
+class BaseTempError(Exception):
+    pass
+
+
+class BaseAppError(Exception):
+    pass
+
+
+class UnavailableServiceError(BaseAppError):
     def __init__(self, service_name: str):
         self.service_name = service_name
 
@@ -17,7 +25,7 @@ class UnavailableServiceError(Exception):
 
 
 
-class BadValueError(Exception):
+class BadValueError(BaseTempError):
     def __init__(self, field_name: str):
         self.field_name = field_name
 
@@ -32,7 +40,7 @@ class BadValueError(Exception):
         super().__init__(self.message)
 
 
-class ExternalClientError(Exception):
+class ExternalClientError(BaseTempError):
     def __init__(self, service_name: str, status_code: int, details: str):
         self.service_name = service_name
         self.status_code = status_code

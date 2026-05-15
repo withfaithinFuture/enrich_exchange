@@ -2,7 +2,11 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
-from src.exchange.models import Base
+from src.shares.models import UserSharesModel
+from src.shares.models import UserSharesMessages
+from src.exchanges.models import ExchangeModel
+from src.base_service import Base
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

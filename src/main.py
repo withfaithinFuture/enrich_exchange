@@ -1,6 +1,5 @@
 import asyncio
 import logging
-
 import uvicorn
 
 
@@ -18,7 +17,7 @@ async def main() -> None:
         host="0.0.0.0",
         port=8001,
         reload=True,
-        factory=True,
+        factory=True    
     )
 
 
